@@ -1,2 +1,3 @@
-# btrfs-thin-book
-Btrfsの薄い本
+# Btrfsの薄い本
+
+[目次はこちら](index.md)
