@@ -1,32 +1,8 @@
-# はじめに
+# [はじめに](introduction.md)
 
-# 機能概要
+# [機能概要](features.md)
 
-## ボリュームマネージャ
-
-## サブボリュームとスナップショット
-
-## RAID
-
-## 障害検知/修復
-
-## 透過的圧縮
-
-## 重複排除
-
-## quota
-
-# 使用方法(基本)
-
-## 作成
-
-## デバイス操作(add/remove/replace/balance)
-
-## subvol/snapshot
-
-## 状態表示(filesystem/df/du)
-
-## quota
+# [使用方法](usage.md)
 
 # 使用方法(応用)
 
@@ -60,7 +36,7 @@ Btrfs使用時に遭遇する様々なトラブルへの対処方法を逆引き
 
 ## dmesgに出力されるメッセージ
 
-# 媒体構造
+# [媒体構造](data_structure.md)
 
 # 処理論理
 
