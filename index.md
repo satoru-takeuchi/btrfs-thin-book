@@ -4,6 +4,7 @@
 - [利用例](advanced_usage.md)
 - その他利用案
 - [開発中の機能](features_in_development.md)
+- チューニング
 - [逆引きトラブルシューティング](trouble_shooting.md)
 - [媒体構造](data_structure.md)
 - 処理論理
