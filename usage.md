@@ -36,3 +36,6 @@ mkfs.btrfs
 
 # quotaの設定
 
+# 重複排除
+
+> duperemove
