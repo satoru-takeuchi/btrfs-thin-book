@@ -59,35 +59,6 @@ Devices:
 
 Btrfsファイルシステム作成後は、他のファイルシステムと同様、mountコマンドを使えば利用できます。複数パーティションから成るBtrfsファイルシステムの場合、すべてのパーティションのうちのいずれか1つを指定すればよいです。
 
-ファイルシステム作成時にRAID構成を指定できます。データについては-dオプションで、メタデータについては-mオプションで、それぞれに指定します。指定できる値はsingle,dup,raid0,raid1,raid10,raid5,raid6のいずれかです。singleはRAID構成にしないという意味です。dupは同じデバイスに2つのデータコピーを持つという意味です。dupは単一デバイスのときのみ指定できます。RAID構成のデフォルト値は、単一デバイスの場合、データはsingle,メタデータはdupです。複数デバイスの場合、データはraid0,メタデータはraid1です。
-
-次に示すのは、2デバイス構成の場合に、データもメタデータもRAID1構成にする例です。
-
-```
-# mkfs.btrfs -d raid1 -m raid1 /dev/sda1 /dev/sda2
-btrfs-progs v4.4
-See http://btrfs.wiki.kernel.org for more information.
-
-Label:              (null)
-UUID:               ...
-Node size:          16384
-Sector size:        4096
-Filesystem size:    186.26GiB
-Block group profiles:
-  Data:             RAID1             1.01GiB
-  Metadata:         RAID1             1.01GiB
-  System:           RAID1            12.00MiB
-SSD detected:       no
-Incompat features:  extref, skinny-metadata
-Number of devices:  2
-Devices:
-   ID        SIZE  PATH
-    1    93.13GiB  /dev/sda1
-    2    93.13GiB  /dev/sda2
-
-# 
-```
-
 ## ext2/3/4からBtrfsへの変換と復旧
 
 既存のext2/3/4ファイルシステムのbtrfsへの変換ができます。気に入らなければ再びbtrfsからext2/3/4に復旧もできます。
@@ -124,6 +95,37 @@ conversion complete.
 rollback complete.
 # blkid /dev/sda1
 /dev/sda1: UUID="..." TYPE="ext4" PARTUUID="..."                 # ファイルシステムがext4に戻っている
+# 
+```
+
+# RAID
+
+ファイルシステム作成時にRAID構成を指定できます。データについては-dオプションで、メタデータについては-mオプションで、それぞれに指定します。指定できる値はsingle,dup,raid0,raid1,raid10,raid5,raid6のいずれかです。singleはRAID構成にしないという意味です。dupは同じデバイスに2つのデータコピーを持つという意味です。dupは単一デバイスのときのみ指定できます。RAID構成のデフォルト値は、単一デバイスの場合、データはsingle,メタデータはdupです。複数デバイスの場合、データはraid0,メタデータはraid1です。
+
+次に示すのは、2デバイス構成の場合に、データもメタデータもRAID1構成にする例です。
+
+```
+# mkfs.btrfs -d raid1 -m raid1 /dev/sda1 /dev/sda2
+btrfs-progs v4.4
+See http://btrfs.wiki.kernel.org for more information.
+
+Label:              (null)
+UUID:               ...
+Node size:          16384
+Sector size:        4096
+Filesystem size:    186.26GiB
+Block group profiles:
+  Data:             RAID1             1.01GiB
+  Metadata:         RAID1             1.01GiB
+  System:           RAID1            12.00MiB
+SSD detected:       no
+Incompat features:  extref, skinny-metadata
+Number of devices:  2
+Devices:
+   ID        SIZE  PATH
+    1    93.13GiB  /dev/sda1
+    2    93.13GiB  /dev/sda2
+
 # 
 ```
 
