@@ -12,7 +12,7 @@ btrfs-progs v4.4
 See http://btrfs.wiki.kernel.org for more information.
 
 Label:              (null)
-UUID:               d5a5ac15-01bd-4747-b1b2-6d2e6726469c
+UUID:               ...
 Node size:          16384
 Sector size:        4096
 Filesystem size:    93.13GiB
@@ -38,7 +38,7 @@ btrfs-progs v4.4
 See http://btrfs.wiki.kernel.org for more information.
 
 Label:              (null)
-UUID:               129893fa-10b7-4bf8-ab80-528125073d76
+UUID:               ...
 Node size:          16384
 Sector size:        4096
 Filesystem size:    186.26GiB
@@ -67,7 +67,7 @@ btrfs-progs v4.4
 See http://btrfs.wiki.kernel.org for more information.
 
 Label:              (null)
-UUID:               9a686047-b2de-43d2-b1cd-c7ce95058358
+UUID:               ...
 Node size:          16384
 Sector size:        4096
 Filesystem size:    186.26GiB
@@ -86,9 +86,44 @@ Devices:
 # 
 ```
 
-## ext4からの変換
+## ext2/3/4からBtrfsへの変換と復旧
 
-> btrfs convert
+既存のext2/3/4ファイルシステムのbtrfsへの変換ができます。気に入らなければ再びbtrfsからext2/3/4に復旧もできます。
+
+次に示すのは、ext2/3/4が入った/dev/sda1をbtrfsに変換する例です。このとき/dev/sda1はマウントされていない状態である必要があります。
+
+```
+# blkid /dev/sda1
+/dev/sda1: UUID="..." TYPE="ext4" PARTUUID="..."                         # ファイルシステムタイプはext4
+# btrfs-convert /dev/sda1 
+create btrfs filesystem:
+	blocksize: 4096
+	nodesize:  16384
+	features:  extref, skinny-metadata (default)
+creating btrfs metadata.
+copy inodes [o] [         0/        11]
+creating ext2 image file.
+cleaning up system chunk.
+conversion complete.
+# blkid /dev/sda1
+/dev/sda1: UUID="..." UUID_SUB="..." TYPE="btrfs" PARTUUID="..."         # ファイルシステムタイプはbtrfs
+# 
+```
+
+この後/dev/sda1はBtfsファイルシステムとしてアクセスできます。後でext2/3/4に復旧する予定がある場合は、それまでに次のことをしてはいけません。
+
+- ファイルシステムのトップディレクトリにあるext2_savedサブボリュームの削除。ここには変換元のext2/3/4ファイルシステムの情報が記録されています。
+- 後述のbtrfs balanceコマンド
+
+ファイルシステムの変換後にBtrfsを使ってみたものの、気に入らなければ、アンマウントしてから次のコマンドでext4に復旧できます。
+
+```
+# btrfs-convert -r /dev/sda1
+rollback complete.
+# blkid /dev/sda1
+/dev/sda1: UUID="..." TYPE="ext4" PARTUUID="..."                 # ファイルシステムがext4に戻っている
+# 
+```
 
 # 透過的圧縮
 
