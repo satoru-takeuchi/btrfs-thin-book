@@ -194,8 +194,89 @@ compression=zlib
 
 # ストレージプールに対するデバイスの追加、削除、交換
 
-> btrfs device [add|remove]
-> btrsf replace
+btrfs device addサブコマンドによって、ストレージプールにデバイスを追加できます。次に示すのは/dev/sda2を/mntにマウントされたBtrfsファイルシステムに追加する例です。
+
+```
+# btrfs filesystem show /mnt 
+Label: none  uuid: 43e7bf1d-f6cb-41eb-b2b3-bc073d61bafd
+	Total devices 1 FS bytes used 384.00KiB
+	devid    1 size 93.13GiB used 2.02GiB path /dev/sda1
+
+# btrfs device add /dev/sda2 /mnt/
+# btrfs filesystem show /mnt 
+Label: none  uuid: 43e7bf1d-f6cb-41eb-b2b3-bc073d61bafd
+	Total devices 2 FS bytes used 384.00KiB
+	devid    1 size 93.13GiB used 2.02GiB path /dev/sda1
+	devid    2 size 93.13GiB used 0.00B path /dev/sda2		# /dev/sda2が追加されている
+
+# 
+```
+
+追加したデバイス(上記の例では/dev/sda2)はほぼ空の状態なので、この後に後述のbtrfs balanceサブコマンドを実行するのが望ましいです。
+
+
+btrfs device delサブコマンドによって、ストレージプールからデバイスを取り外せます。この処理は、取り外すデバイスに存在するデータをストレージプール上の他のデバイスに移動させる必要があるため、取り外すデバイスに存在していたデータの量に応じて処理の所要時間が長くなります。
+
+
+次に示すのは、直前の例で追加した/dev/sda2を/mntから取り外す例です。
+
+```
+# btrfs device remove /dev/sda2 /mnt
+# btrfs filesystem show /mnt
+Label: none  uuid: 43e7bf1d-f6cb-41eb-b2b3-bc073d61bafd
+	Total devices 1 FS bytes used 384.00KiB
+	devid    1 size 93.13GiB used 2.02GiB path /dev/sda1
+
+# 
+```
+btrfs replaceサブコマンドによってストレージプール内のデバイスを、ストレージプール外の他のデバイスと交換できます。この処理は、交換前のデバイスに存在するデータを交換後のデバイスに移動させる必要があるため、取り外すデバイスに存在していたデータの量に応じて処理の所要時間が長くなります。replaceはaddやremoveと異なり、開始処理(start)、進捗確認処理(status)、取り消し処理(cancel)の3つに分割されています。
+
+次に示すのは/mnt以下に存在するBtrfsファイルシステムにおいて、ストレージプールに存在する/dev/sda2と、ストレージプール外にある/dev/sda3を交換する例です。
+
+```
+# btrfs filesystem show /mnt/
+Label: none  uuid: f631e109-ad19-4fc2-a3b2-16ac7724f76f
+	Total devices 2 FS bytes used 1.00GiB
+	devid    1 size 93.13GiB used 2.02GiB path /dev/sda1
+	devid    2 size 93.13GiB used 2.00GiB path /dev/sda2
+
+# btrfs replace start /dev/sda2 /dev/sda3 /mnt/
+# 
+```
+
+進捗は次のようにbtrfs replace statusコマンドによって確認できます。
+
+
+```
+# btrfs replace status /mnt/
+Started on 30.May 11:03:16, finished on 30.May 11:03:28, 0 write errs, 0 uncorr. read errs	# 正常終了(finished)している
+# btrfs filesystem show /mnt/
+Label: none  uuid: f631e109-ad19-4fc2-a3b2-16ac7724f76f
+	Total devices 2 FS bytes used 1.00GiB
+	devid    1 size 93.13GiB used 2.02GiB path /dev/sda1
+	devid    2 size 93.13GiB used 2.00GiB path /dev/sda3		# /dev/sda2が/dev/sda3になっている
+
+# 
+```
+
+このコマンドはデバイスの交換が完了するまで動作し続けますが、途中でC-cを押せばコマンドから抜けられます。その後再び同じコマンドを実行すれば再度進捗を確認できます。
+
+次に示すのは/dev/sda2と/dev/sdb3の交換処理を途中で中断する例です。
+
+
+```
+# btrfs replace start /dev/sda2 /dev/sda3 /mnt/
+# btrfs replace cancel /mnt
+# btrfs replace status /mnt/
+Started on 30.May 11:09:28, canceled on 30.May 11:09:33 at 0.0%, 0 write errs, 0 uncorr. read errs	# 取り消しされた(canceled)
+# btrfs fi show /mnt/
+Label: none  uuid: f631e109-ad19-4fc2-a3b2-16ac7724f76f
+	Total devices 2 FS bytes used 1.00GiB
+	devid    1 size 93.13GiB used 2.02GiB path /dev/sda1
+	devid    2 size 93.13GiB used 2.00GiB path /dev/sda2		# /dev/sda2のまま
+
+# 
+```
 
 # バランス
 
