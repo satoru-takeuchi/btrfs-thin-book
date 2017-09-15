@@ -422,9 +422,9 @@ drwxr-xr-x 1 root root 0 Sep 15 15:03 sub
 ID 266 gen 55 top level 5 path sub
 # btrfs subvolume create /mnt/sub2
 Create subvolume '/mnt/sub2'
-root@gopher:/home/sat/src/linux.browse# btrfs subvolume create /mnt/sub3
+# btrfs subvolume create /mnt/sub3
 Create subvolume '/mnt/sub3'
-root@gopher:/home/sat/src/linux.browse# btrfs subvolume list /mnt
+# btrfs subvolume list /mnt
 ID 266 gen 55 top level 5 path sub
 ID 267 gen 56 top level 5 path sub2
 ID 268 gen 57 top level 5 path sub3
@@ -448,7 +448,7 @@ Delete subvolume (no-commit): '/mnt/sub'
 ERROR: cannot delete '/mnt/sub': Directory not empty
 # btrfs sub delete /mnt/sub/sub2
 Delete subvolume (no-commit): '/mnt/sub/sub2'
-root@gopher:/home/sat/src/linux.browse# btrfs sub delete /mnt/sub
+# btrfs sub delete /mnt/sub
 Delete subvolume (no-commit): '/mnt/sub'
 # 
 ```
