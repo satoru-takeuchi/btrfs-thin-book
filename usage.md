@@ -464,7 +464,127 @@ rmdir: failed to remove '/mnt/sub/': Operation not permitted
 
 # スナップショットの作成
 
-> btrfs subvolume snapshot
+サブボリューム単位でスナップショットを採取できます。
+
+```
+# btrfs subvolume list /mnt
+ID 266 gen 61 top level 5 path sub
+# ls -l /mnt/sub
+total 0
+# echo hello >/mnt/sub/test
+# btrfs subvolume snapshot /mnt/sub /mnt/snap
+Create a snapshot of '/mnt/sub' in '/mnt/snap'
+# 
+```
+
+スナップショットの中身は採取元のサブボリュームと同じです。
+
+```
+# ls -l /mnt/snap
+total 4
+-rw-r--r-- 1 root root 6 Sep 15 15:31 test
+# cat /mnt/snap/test
+hello
+# 
+```
+
+`btrfs subvolume snapshot`コマンドに`-r`オプションを付与すると、読み出し専用スナップショットを採取できます。
+
+```
+# btrfs subvolume delete /mnt/snap
+Delete subvolume (no-commit): '/mnt/snap'
+# btrfs subvolume snapshot -r /mnt/sub /mnt/snap
+Create a readonly snapshot of '/mnt/sub' in '/mnt/snap'
+# 
+```
+
+採取したスナップショットはサブボリュームと同様に扱えます。`btrfs subvolume list`によって、採取した取したスナップショットが出てきますし、`btrfs subvolume delete`で削除できます。
+
+```
+# btrfs subvolume list /mnt/
+ID 266 gen 58 top level 5 path sub
+ID 269 gen 58 top level 5 path snap
+# btrfs subvolume delete /mnt/snap
+Delete subvolume (no-commit): '/mnt/snap'
+# 
+```
+
+ここまで見た範囲では`cp -r`との違いが見えません。スナップショットは採取元となるサブボリューム内のデータ量が多い場合に威力を発揮します。サブボリュームを`cp -r`でコピーする場合とスナップショットを取る場合とで、採取時間とsync後のストレージの使用量を比較してみましょう。ここではlinuxのgitリポジトリを持つサブボリュームをコピー元およびスナップショット元にします。
+
+
+```
+# btrfs subvolume list /mnt
+ID 258 gen 9 top level 5 path sub
+# ls -l /mnt/sub
+total 0
+drwxrwxr-x 1 sat sat 3386 Aug 31 12:04 linux
+# du -h --summarize /mnt/sub/linux
+4.5G	/mnt/sub/linux
+# btrfs filesystem df /mnt
+Data, RAID0: total=6.00GiB, used=4.32GiB
+System, RAID1: total=8.00MiB, used=16.00KiB
+Metadata, RAID1: total=1.00GiB, used=85.95MiB
+GlobalReserve, single: total=32.00MiB, used=0.00B
+```
+
+まずはコピーの場合です。
+
+
+```
+# time cp -r /mnt/sub /mnt/cp
+
+real	0m20.668s
+user	0m0.096s
+sys	0m2.788s
+# sync
+# btrfs filesystem df /mnt
+Data, RAID0: total=10.00GiB, used=8.65GiB
+System, RAID1: total=8.00MiB, used=16.00KiB
+Metadata, RAID1: total=1.00GiB, used=171.23MiB
+GlobalReserve, single: total=64.00MiB, used=0.00B
+# 
+```
+
+終了までに20.6秒かかりました。増加したデータ使用量、およびメタデータの使用量はそれぞれ4.32GBと85.2MBです。
+
+続いてスナップショットの場合です。
+
+
+```
+# time btrfs subvolume snapshot /mnt/sub /mnt/snap
+Create a snapshot of '/mnt/sub' in '/mnt/snap'
+
+real	0m0.157s
+user	0m0.000s
+sys		0m0.004s
+# sync
+# btrfs filesystem df /mnt/
+Data, RAID0: total=10.00GiB, used=8.65GiB
+System, RAID1: total=8.00MiB, used=16.00KiB
+Metadata, RAID1: total=1.00GiB, used=171.25MiB
+GlobalReserve, single: total=64.00MiB, used=0.00B
+ 
+
+```
+
+所要時間は0.157秒でした。増加したデータとメタデータの量はそれぞれ0, および0.02MBでした。
+
+両者の違いを表にまとめてみましょう。
+
+||コピー|スナップショット|
+|:-------|:---------|:----------|
+|所要時間|20.6s|0.157s|
+|データ増加量|4.32GB|0|
+|メタデータ増加量|85.2MB|0.02MB|
+
+すべてにおいてスナップショットのほうが、はるかに良い値になっていることがわかります。これは以前に述べたように、スナップショットの"データはコピーせず、メタデータ(の中の必要なものだけ)のみをコピーする"という特徴によるものです。
+
+スナップショットの最も単純な活用例はバックアップです。スナップショットを使わないバックアップの場合、バックアップ元の領域を更新しないことを保証した状態、静止状態でデータをバックアップ先のストレージにコピーする必要があります。それに対してスナップショットを使うバックアップの場合、バックアップ元の領域(サブボリューム)を静止状態にするのはスナップショット採取時のみ(上述の例では100ms少々だけ)で済みます。採取後はバックアップ元のサブボリュームをいくら更新してもスナップショットのデータの中身は変化しませんので、バックアップ元サブボリュームを使用しながら、スナップショットのデータをバックアップ先にコピーできます。
+
+最後にスナップショットの注意点を2つ挙げておきます。
+
+- スナップショット採取後にスナップショット、あるいスナップショットは採取元のサブボリューム上に書き込みをすると、書き込んだ領域がコピーオンライトの仕組みによって共有解除され、ストレージプールから新たなデータ、およびメタデータ領域を獲得します。このためBtrfsでは「既存ファイルへの書き込みしかしていないのにデータ使用量が増えていく」という事象が発生します。
+- スナップショット採取時にはスナップショット上のデータに対応するダーティキャッシュ(ファイルへの変更がストレージに反映されていない領域)を全てストレージにライトバックされます。ダーティキャッシュが存在しない場合は上記のようにミリ秒オーダーでスナップショット採取が終わりますが、ダーティキャッシュが存在する場合は、その量に応じてスナップショット採取の所要時間は増加します。
 
 # quotaの設定
 
