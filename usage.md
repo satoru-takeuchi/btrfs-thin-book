@@ -394,7 +394,73 @@ btrfs balance cancel /mnt/
 
 # サブボリュームの操作
 
-> btrfs subvolume
+あるBtrfsファイルシステムにサブボリュームを作成、削除する方法、および、サブボリュームを一覧表示する方法を示します。
+
+サブボリュームを作成するには次のようにします。
+
+```
+# btrfs subvolume create /mnt/sub
+Create subvolume '/mnt/sub'
+
+```
+
+作成したサブボリュームはシステムからはただのディレクトリであるかのように見えます。
+
+```
+# ls -l /mnt
+total 0
+drwxr-xr-x 1 root root 0 Sep 15 15:03 sub
+# 
+```
+
+サブボリュームはBtrfsファイルシステム上の任意のディレクトリ上に作れます。サブボリュームの配下にサブボリュームを作ることもできます。
+
+あるBtrfsファイルシステム内に存在するサブボリュームを一覧表示するには次のようにします。
+
+```
+# btrfs subvolume list /mnt
+ID 266 gen 55 top level 5 path sub
+# btrfs subvolume create /mnt/sub2
+Create subvolume '/mnt/sub2'
+root@gopher:/home/sat/src/linux.browse# btrfs subvolume create /mnt/sub3
+Create subvolume '/mnt/sub3'
+root@gopher:/home/sat/src/linux.browse# btrfs subvolume list /mnt
+ID 266 gen 55 top level 5 path sub
+ID 267 gen 56 top level 5 path sub2
+ID 268 gen 57 top level 5 path sub3
+# 
+```
+
+作成済みのサブボリューム、およびその中の全てのファイルを削除するには次のようにします。
+
+```
+# btrfs subvolume delete /mnt/sub
+Delete subvolume (no-commit): '/mnt/sub'
+```
+
+削除しようとするサブボリュームの配下に別のサブボリュームが存在する場合、削除は失敗します。
+
+```
+# btrfs subvolume create /mnt/sub/sub2
+Create subvolume '/mnt/sub/sub2'
+# btrfs subvolume delete /mnt/sub/
+Delete subvolume (no-commit): '/mnt/sub'
+ERROR: cannot delete '/mnt/sub': Directory not empty
+# btrfs sub delete /mnt/sub/sub2
+Delete subvolume (no-commit): '/mnt/sub/sub2'
+root@gopher:/home/sat/src/linux.browse# btrfs sub delete /mnt/sub
+Delete subvolume (no-commit): '/mnt/sub'
+# 
+```
+
+サブボリュームはmdirによって削除できません。
+
+
+```
+# rmdir /mnt/sub/
+rmdir: failed to remove '/mnt/sub/': Operation not permitted
+# 
+```
 
 # スナップショットの作成
 
