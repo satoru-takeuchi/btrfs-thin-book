@@ -10,6 +10,6 @@
 
 ## Rockstor
 
-# OpenSUSE
+# openSUSE
 
 snapperを用いたあれこれ
