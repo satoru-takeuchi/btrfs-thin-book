@@ -1,0 +1,3 @@
+- [Btrfs: The Linux B-tree Filesystem](https://pdfs.semanticscholar.org/fbd9/d1056ffbd18c2b53ee7abbe1521c7066df47.pdf)
+- [Btrfs wiki](https://btrfs.wiki.kernel.org/index.php/Main_Page): 
+- [Btrfsの基礎 part1 機能編](https://www.slideshare.net/fj_staoru_takeuchi/btrfs-part1): 

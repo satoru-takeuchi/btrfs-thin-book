@@ -8,3 +8,4 @@
 - [逆引きトラブルシューティング](trouble_shooting.md)
 - [媒体構造](data_structure.md)
 - 処理論理
+- [参考文献](references.md)
