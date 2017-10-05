@@ -104,7 +104,7 @@ $ btrfs-rescue super-recover /dev/sda2
 
 
 ```
-mount -o usebackuproot /dev/sdb2
+mount -o usebackuproot /dev/sdb2 /mnt
 ```
 
 root treeの内容は定期的に更新されていきますが、過去のroot treeをバックアップとして保存しています。上記コマンドは、最新のroot treeのかわりにバックアップ用のroot treeを使用してBtrfsファイルシステムをmountします。mountに成功したとしても、root treeが過去のものである以上、データも過去のものになっていることにご注意ください。
