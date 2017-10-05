@@ -55,9 +55,23 @@ btrfs-rescue chunk-recovery
 
 btrfs-rescue chunk-super
 
-## logがどういう言っている
+## replay, recover, log_tree という文字列を含んだバックトレースが出ている
 
-btrfs-rescue zero-log
+バックトレースはたとえば以下のようなものです。
+
+```
+? replay_one_dir_item+0xb5/0xb5 [btrfs]
+? walk_log_tree+0x9c/0x19d [btrfs]
+? btrfs_read_fs_root_no_radix+0x169/0x1a1 [btrfs]                                                                                                                                           ? btrfs_recover_log_trees+0x195/0x29c [btrfs]
+? replay_one_dir_item+0xb5/0xb5 [btrfs]                                                                                                                                                     ? btree_read_extent_buffer_pages+0x76/0xbc [btrfs]                                                                                                                                          ? open_ctree+0xff6/0x132c [btrfs]
+```
+これはBtrfsが内部で管理しているログツリーと呼ばれるメタデータが壊れているためマウントが失敗したことを示しています。ファイルシステムがクラッシュした直後のmountがこの理由によって失敗することがあります。壊れたログは次のコマンドによって削除できます。その後もう一度ファイルシステムのmountを試してください。
+
+```
+$ btrfs-rescue zero-log /dev/sda2
+```
+
+このログツリーの削除によってどのような影響があるかについて説明します。Btrfsはメモリ上にキャッシュされたファイルシステムのデータを定期的(デフォルトでは30秒に一回)にストレージに同期させています。この同期操作のことをトランザクションコミットと呼びます。fsync()やO_SYNCで開いたファイルへの書き込みなどの同期書き込みについては、一旦ストレージ上のログツリーに保存した上で、トランザクションコミット時にデータ領域に反映させます。ログツリーを削除すると、最後のトランザクションコミットからクラッシュ時までの同期書き込みの結果を失います。
 
 ## bad tree rootがどうこう言っている
 
