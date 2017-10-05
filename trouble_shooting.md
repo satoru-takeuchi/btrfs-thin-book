@@ -28,9 +28,13 @@ BTRFS info (device /dev/sda2): forced readonly
 
 バックアップを採取した上で、次回mount時に失敗した場合は後述の対処をしてください。
 
-# mount時にbalance処理が動作してシステムがクラッシュする
+# balance中にumountした、あるいはシステムがクラッシュした後のmount時に再度システムがクラッシュする
 
-skip_balanceマウントオプション
+balance中にumountあるいはクラッシュした場合、次のmount時にbalance処理が再開されます。このとき、とくに後者がbalance処理のバグによって引き起こされた場合、balance処理の問題によってmount時のシステムクラッシュが発生している可能性があります。次のようにskip_balanceオプションを指定してmountすると、この問題が避けられます。
+
+```
+# mount -o skip_balance /dev/sda2 /mnt
+```
 
 # dmesgにBtrfsに関するメッセージが出るようになった
 
