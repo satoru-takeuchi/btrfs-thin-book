@@ -64,6 +64,16 @@ quota機能を使っていないファイルシステムに対して出力され
 
 # mountできなくなった
 
+システムクラッシュの後などに次のようなメッセージと共にmountが失敗することがあります。
+
+```
+mount: wrong fs type, bad option, bad superblock on /dev/sdc4,
+       missing codepage or helper program, or other error
+
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+```
+
 基本的にはシステムの整合性が採れている状態に採取されたバックアップからファイルシステムを復旧してください。ここに記載するのは、バックアップをとっていない、あるいは最終バックアップ後の可能な限り最新のデータを復旧したいという場合の対処法です。この節に記載の対処は前から順番に試してください。
 
 ## mountできないファイルシステムからファイルを吸い出す
