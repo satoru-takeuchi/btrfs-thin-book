@@ -78,7 +78,7 @@ $ btrfs-rescue zero-log /dev/sda2
 どのデバイスにどのデータを配置するかという情報が入っているchunk treeというメタデータが壊れている可能性があります。次のコマンドによって、ファイルシステムをスキャンしてchunk treeを復元できます。
 
 ```
-$ btrfs-rescue chunk-recovery /dev/sdb2
+$ btrfs-rescue chunk-recover /dev/sdb2
 ```
 
 このコマンドはストレージプールのすべてを走査するため、非常に時間がかかる恐れがあります。
