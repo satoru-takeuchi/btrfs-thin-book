@@ -44,14 +44,6 @@ BTRFS info (device /dev/sda2): forced readonly
 
 バックアップを採取した上で、次回mount時に失敗した場合は後述の対処をしてください。
 
-# balance中にumountした、あるいはシステムがクラッシュした後のmount時に再度システムがクラッシュする
-
-balance中にumountあるいはクラッシュした場合、次のmount時にbalance処理が再開されます。このとき、とくに後者がbalance処理のバグによって引き起こされた場合、balance処理の問題によってmount時のシステムクラッシュが発生している可能性があります。次のようにskip_balanceオプションを指定してmountすると、この問題が避けられます。
-
-```
-# mount -o skip_balance /dev/sda2 /mnt
-```
-
 # dmesgにBtrfsに関するメッセージが出るようになった
 
 ## mount時に "BTRFS info (device XXX): The free space cache file (YYY) is invalid. skip it" というメッセージが出る
@@ -73,6 +65,40 @@ mount: wrong fs type, bad option, bad superblock on /dev/sdc4,
        In some cases useful info is found in syslog - try
        dmesg | tail or so.
 ```
+
+## まず確認すること
+
+### balance中にumountした、あるいはシステムがクラッシュした後のmount時だった可能性
+
+balance中にumountあるいはクラッシュした場合、次のmount時にbalance処理が再開されます。このとき、とくに後者がbalance処理のバグによって引き起こされた場合、balance処理の問題によってmount時に問題がが発生している可能性があります。次のようにskip_balanceオプションを指定してmountすると、この問題が避けられます。
+
+```
+# mount -o skip_balance /dev/sda2 /mnt
+```
+
+### RAIDを構成するデバイスが故障した可能性
+
+Btrfsのストレージプールを構成するデバイスの一つを引数として`btrfs filesystem show`を実行してください。以下の例ではdevice id 1のストレージが故障してカーネルに認識されていません。
+
+```
+# btrfs filesystem show /dev/sdc4
+warning, device 1 is missing
+Label: none  uuid: def851dd-8329-490b-9625-6ec8c6c8a989
+        Total devices 2 FS bytes used 896.00KiB
+        devid    2 size 93.13GiB used 2.01GiB path /dev/sdc4
+        *** Some devices missing
+
+```
+
+この状態であれば、mount時に`-o degraded`オプションを付加すれば、冗長性は失なった状態ではあるものの、マウントはできます。
+
+```
+# mount -o degraded /dev/sdc4 /mnt/
+```
+
+この後の対処は"`btrfs filesystem show`を実行したら"*** Some devices missing"というメッセージが表示された"という節において説明していますので、そちらをごらんください。
+
+## その後の対処
 
 基本的にはシステムの整合性が採れている状態に採取されたバックアップからファイルシステムを復旧してください。ここに記載するのは、バックアップをとっていない、あるいは最終バックアップ後の可能な限り最新のデータを復旧したいという場合の対処法です。この節に記載の対処は前から順番に試してください。
 
