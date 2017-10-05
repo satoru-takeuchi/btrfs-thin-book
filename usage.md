@@ -108,6 +108,8 @@ rollback complete.
 
 # RAID
 
+## ファイルシステムの新規作成時
+
 ファイルシステム作成時にRAID構成を指定できます。データについては-dオプションで、メタデータについては-mオプションで、それぞれに指定します。指定できる値はsingle,dup,raid0,raid1,raid10,raid5,raid6のいずれかです。singleはRAID構成にしないという意味です。dupは同じデバイスに2つのデータコピーを持つという意味です。dupは単一デバイスのときのみ指定できます。RAID構成のデフォルト値は、単一デバイスの場合、データはsingle,メタデータはdupです。複数デバイスの場合、データはraid0,メタデータはraid1です。
 
 次に示すのは、2デバイス構成の場合に、データもメタデータもRAID1構成にする例です。
@@ -135,6 +137,28 @@ Devices:
     2    93.13GiB  /dev/sda2
 
 # 
+```
+
+## 運用中のファイルシステムのRAID構成を変更する
+
+ファイルシステムを作ったときのRAID構成を、運用中に変更できます。次に示すのは、もともとデータはRAID0構成、メタデータはRAID1構成だったBtrfsファイルシステムを、データ、メタデータ共にRAID1構成にする例です。
+
+
+```
+# btrfs fi df /mnt/
+btrfs fi df /mnt/
+Data, RAID0: total=2.00GiB, used=768.00KiB		# データは元々RAID0構成
+System, RAID1: total=8.00MiB, used=16.00KiB
+Metadata, RAID1: total=1.00GiB, used=112.00KiB		# メタデータは元々RAID1構成
+GlobalReserve, single: total=512.00MiB, used=0.00B
+# btrfs balance start -dconvert=raid1 -mconvert=raid1 /mnt	# データ、メタデータともにRAID1構成にする
+Done, had to relocate 3 out of 3 chunks
+# btrfs fi df /mnt/
+Data, RAID1: total=1.00GiB, used=512.00KiB		# データもRAID1構成になっている
+System, RAID1: total=32.00MiB, used=16.00KiB
+Metadata, RAID1: total=1.00GiB, used=112.00KiB		# メタデータは引き続きRAID1構成
+GlobalReserve, single: total=512.00MiB, used=0.00B
+#
 ```
 
 # 透過的圧縮
