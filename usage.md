@@ -281,9 +281,64 @@ Btrfsは各種データを使用するときに、おおよそ次の論理で割
 > btrfs filesystem usage
 > df の代替品
 
-## ファイルのディスク使用量
+## 個々のファイルのストレージ使用量を確認
 
-> btrfs filesystem du
+Btrfsはsnapshotの採取や`cp --reflink`に起因して、ファイルの一部、ないし全てを他のファイルと(場合によっては自分自身とも)共有する事がよくあります。これによって、あるファイルを削除してもストレージプールの空き容量は削除した領域より少ない量しか減らない、あるいはまったく減らないという事象が発生します。このようなときは個々のファイルが共有せずに1ファイルのみで使っている容量を知る必要があります。それをするのが`btrfs filesystem du`コマンドです。このコマンドは文書だけではわかりにくいので実例を使って説明しましょう。
+
+次に示すのはBtrfsファイルシステム上にあるbtrfs-du-testというディレクトリの情報を出力した結果です。
+
+```
+# ls -lR btrfs-du-test
+btrfs-du-test:
+total 0
+drwxr-xr-x 1 root root 16 Oct  5 20:48 snap1
+drwxr-xr-x 1 root root 16 Oct  5 20:48 sub1
+drwxr-xr-x 1 root root 16 Oct  5 20:48 sub2
+
+btrfs-du-test/snap1:
+total 1024
+-rw-r--r-- 1 root root 1048576 Oct  5 20:48 testfile
+
+btrfs-du-test/sub1:
+total 1024
+-rw-r--r-- 1 root root 1048576 Oct  5 20:48 testfile
+
+btrfs-du-test/sub2:
+total 1024
+-rw-r--r-- 1 root root 1048576 Oct  5 20:48 testfile
+```
+
+btrfs-du-test直下にあるsub1, sub2, snap1というのはすべてサブボリュームです。sub1とsub2は独立したサブボリュームであり、それぞれ1MBのサイズを持つtestfileというファイルを持っています。snap1はこの状態のsub1から採取したスナップショットです。つまりsub1とsub2の中のtestfileは共有されていないものの、sub1とsub2の中のtestfileは共有されているということです。これを踏まえて`btrfs filesystem du`コマンドを実行してみましょう。
+
+```
+# btrfs filesystem du btrfs-du-test
+     Total   Exclusive  Set shared  Filename
+   1.00MiB       0.00B           -  btrfs-du-test/sub1/testfile
+   1.00MiB       0.00B           -  btrfs-du-test/sub1
+   1.00MiB     1.00MiB           -  btrfs-du-test/sub2/testfile
+   1.00MiB     1.00MiB           -  btrfs-du-test/sub2
+   1.00MiB       0.00B           -  btrfs-du-test/snap1/testfile
+   1.00MiB       0.00B           -  btrfs-du-test/snap1
+   3.00MiB     1.00MiB     1.00MiB  btrfs-du-test
+# 
+```
+
+出力における一番上の行がヘッダ情報、その下の各行が1つのファイルを表しています。各行の中の各列の意味を次に示します。
+
+- 1列目(Total): ファイルの合計サイズ。ディレクトリの場合はそれに属する全てのファイルのサイズを積算した値
+- 2列目(Exclusive): 上記合計サイズのうち、当該ファイル以外に共有されていないデータのサイズ
+- 3列目(Set shared): 上記合計サイズのうち、ほかのファイルと共有している部分のサイズ。`btrfs filesystem df`の引数に直接指定したファイルのみ表示する。その他のファイルについては"-"を表示する。
+- 4列目(Filename): ファイル名
+
+この意味と上記の出力を照らし合わせると、次のことがわかります。
+
+- sub1, sub2, snap1ともに、各スナップショット内のファイル(testfile)のサイズは1MB
+- sub1とsub2は自分自身だけで使っているデータは無い。実際sub1/testfileとsub2/testfileが指す実データは1つだけ。
+- 上記共有データの合計は1MB
+- sub2は自分自身だけで1MBの領域を使っている(Exclusiveが1MB)
+- snapshotやreflinkによって3 - (1 + 1) = 1MBの利用削減できている。
+
+ファイルシステムの空き容量を増やしたければ、余計なsnapshotを削除したうえで、Exclusiveの欄の値が大きいファイルから重点的に削除するとよいでしょう。
 
 # ストレージプールに対するデバイスの追加、削除、交換
 
