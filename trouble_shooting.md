@@ -1,8 +1,24 @@
 本章はBtrfs使用時に遭遇する様々なトラブルへの対処方法を逆引き式に紹介します。
 
-# RAIDを構成するデバイスのうち1つが認識されなくなった
+# `btrfs filesystem show`を実行したら"*** Some devices missing"というメッセージが表示された。
 
-btrfs-replace
+メッセージの例を示します。
+
+```
+# btrfs filesystem show /mnt/
+Label: none  uuid: b3355d36-38bf-43a0-bcda-f53ffc266da2
+        Total devices 2 FS bytes used 640.00KiB
+        devid    2 size 93.13GiB used 2.01GiB path /dev/sdc4
+        *** Some devices missing
+
+# 
+```
+
+RAID構成になっているBtrfsのストレージプールを構成するデバイスが故障したと考えられます。運用継続はできるものの、可及的速やかに故障したデバイスを正常なデバイスに交換する必要があります。上記の例では2つあるデバイス("Total devices 2")のうちデバイスIDが1であるデバイス(devid 1)が故障していますので、次のように別デバイスと交換します。
+
+```
+# btrfs replace start 1 /dev/sdc6 /mnt
+```
 
 # 書き込み時にENOSPCで異常終了した
 
