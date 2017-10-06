@@ -57,7 +57,7 @@ RAID構成になっているBtrfsのストレージプールを構成するデ�
 # rm /run/balance-temp
 ```
 
-# "BTRFS error (device XXX): bdev YYY errs: wr 0, rd 1, flush 0, corrupt 0, gen 0"というメッセージが出る
+# "BTRFS error (device XXX): bdev YYY errs: wr 0, rd 1, flush 0, corrupt 0, gen 0"のようなメッセージが出る
 
 Btrfsのストレージプールを構成するデバイスにおいて問題が発生した可能性が高いです。正常なデバイスにおいても一時的にこのような事象が発生することがあるため、一度出たくらいではそれほど気にする必要はありません。しかし、多発するようであればデバイスの交換を検討してください。
 
