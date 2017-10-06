@@ -28,7 +28,26 @@ RAID構成になっているBtrfsのストレージプールを構成するデ�
 
 恐らくディレクトリではなくサブボリュームを削除しようとしています。`btrfs subvolume list`コマンドによって削除しようとしているものがサブボリュームかどうかを確認してください。サブボリュームだった場合は`btrfs subvolume delete`サブコマンドによって削除してください。
 
-# ストレージプールに十分な空き領域があるにも関わらず、btrfs balanceがENOSPCで異常終了した
+# ストレージプールに十分な空き領域があるにも関わらず、バランス処理がENOSPCで異常終了した
+
+ストレージプール内の空き領域(`btrfs filesystem df`によって表示される各行の"total - used"の値)がデータ、メタデータ共に十分あるにも関わらずバランス処理が異常終了することがあります。このとき`btrfs filesystem show`を実行すると、ストレージプール内のファイルシステムに予約されていない領域("size - used")がほぼ存在しないはずです。実装上の話になりますが、バランス処理は処理の途中で予約されていない領域の一部(典型的には1GB)を作業領域として使用します。この作業領域を確保できないとENOSPCEが発生するというわけです。
+
+この問題を回避するためには、非常に不格好ですが、一時的に作業領域を確保するために他のデバイスをストレージプールに追加して、バランス処理が終われば削除するという方法が使えます。以下の例では、そのために、メモリ上に作成されたtmpfs(/tmp)上のファイルbalance-reserveというファイルをループバックマウントしています。
+
+```
+# dd if=/dev/zero of=/tmp/balance-temp bs=2G count=1
+...
+# losetup -f
+/dev/loop1
+# losetup /dev/loop1 /tmp/balance-temp
+# btrfs device add /dev/loop1 /mnt
+...
+# btrfs balance start /mnt
+...
+# btrfs device remove /dev/loop1 /mnt
+...
+# rm /run/balance-temp
+```
 
 # "BTRFS error (device XXX): bdev YYY errs: wr 0, rd 1, flush 0, corrupt 0, gen 0"というメッセージが出る
 
