@@ -2,7 +2,7 @@
 
 # `btrfs filesystem show`を実行したら"*** Some devices missing"というメッセージが表示された。
 
-メッセージの例を示します。
+RAID構成になっているBtrfsのストレージプールを構成するデバイスが故障したと考えられます。/dev/sdb4と/dev/sdc4の2つのデバイスからRAID1構成を組んだBtrfsにおいて/dev/sdb4が故障した際のメッセージの例を示します。
 
 ```
 # btrfs filesystem show /mnt/
@@ -14,10 +14,19 @@ Label: none  uuid: b3355d36-38bf-43a0-bcda-f53ffc266da2
 # 
 ```
 
-RAID構成になっているBtrfsのストレージプールを構成するデバイスが故障したと考えられます。運用継続はできるものの、可及的速やかに故障したデバイスを正常なデバイスに交換する必要があります。上記の例では2つあるデバイス("Total devices 2")のうちデバイスIDが1であるデバイス(devid 1)が故障していますので、次のように別デバイスと交換します。
+この場合、運用継続はできるものの、可及的速やかに故障したデバイスを正常なデバイスに交換する必要があります。たとえば故障した/dev/sdb4と正常な/dev/sdc6を交換する場合は場合は次のようにします。
 
 ```
-# btrfs replace start 1 /dev/sdc6 /mnt
+# btrfs replace start /dev/sdb4 /dev/sdc6 /mnt
+```
+
+ストレージプールを構成するデバイスを記録していなかったことにより故障したデバイスの名前がわからない場合は、代替案として次のような方法を使えます。
+
+
+```
+# btrfs device remove missing /mnt
+...
+# btrfs device add /dev/sdc6 /mnt
 ```
 
 # 書き込み時にENOSPCで異常終了した
